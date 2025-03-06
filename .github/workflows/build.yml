@@ -29,7 +29,7 @@ jobs:
     - name: Prepare Build Artifact
       shell: pwsh
       run: |
-        Copy-Item "ProggersPlease/bin/Release/x64/ProggersPlease/latest.zip" -Destination "ProggersPlease.zip"
+        Copy-Item "bin/Release/x64/ProggersPlease/latest.zip" -Destination "ProggersPlease.zip"
         Expand-Archive -Force ProggersPlease.zip Artifact
     - name: Upload ProggersPlease
       uses: actions/upload-artifact@v4
