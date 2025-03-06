@@ -40,7 +40,7 @@ jobs:
       shell: pwsh
       run: |
         $repo = Get-Content 'repo.json' -raw | ConvertFrom-Json
-        $build = Get-Content 'ProggersPlease/bin/Release/x64/ProggersPlease/ProggersPlease.json' -raw | ConvertFrom-Json
+        $build = Get-Content 'ProggersPlease/bin/x64/Release/ProggersPlease/ProggersPlease.json' -raw | ConvertFrom-Json
         if ($repo.AssemblyVersion -eq $build.AssemblyVersion) {
           Exit
         }
