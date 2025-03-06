@@ -5,7 +5,7 @@ namespace ProggersPlease;
 public static class Utils
 {
     public static string SanitizeName(string name) {
-        string sanitized = System.Text.RegularExpressions.Regex.Replace(name, @"[^a-zA-Z0-9\s]", "");
+        string sanitized = System.Text.RegularExpressions.Regex.Replace(name, @"[^a-zA-Z0-9\s-]+", "");
         sanitized = sanitized.Replace(" ", "-").ToLower();
         return sanitized;
     }
