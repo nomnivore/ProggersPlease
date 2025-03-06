@@ -1,12 +1,11 @@
 using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using SamplePlugin.Windows;
+using ProggersPlease.Windows;
 
-namespace SamplePlugin;
+namespace ProggersPlease;
 
 public sealed class Plugin : IDalamudPlugin
 {
@@ -29,21 +28,25 @@ public sealed class Plugin : IDalamudPlugin
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
-        // you might normally want to embed resources and load them from the manifest stream
-        var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
+        // initialize lodestone client
+        LodestoneClientProvider.Initialize();
 
         ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this, goatImagePath);
+        MainWindow = new MainWindow(this);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
-        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
-        {
-            HelpMessage = "A useful message to display in /xlhelp"
-        });
+        // TODO: add commands (if needed)
+
+        // CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
+        // {
+        //     HelpMessage = "A useful message to display in /xlhelp"
+        // });
 
         PluginInterface.UiBuilder.Draw += DrawUI;
+
+        // TODO: make UIs
 
         // This adds a button to the plugin installer entry of this plugin which allows
         // to toggle the display status of the configuration ui
@@ -52,7 +55,7 @@ public sealed class Plugin : IDalamudPlugin
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
-        // adds a test button to the context menu for players
+        // adds a context menu item to the context menu for players
         var contextMenu = new PContextMenu(ContextMenu, ChatGui);
         contextMenu.Enable();
     }
@@ -65,7 +68,10 @@ public sealed class Plugin : IDalamudPlugin
         ConfigWindow.Dispose();
         MainWindow.Dispose();
 
-        CommandManager.RemoveHandler(CommandName);
+        // CommandManager.RemoveHandler(CommandName);
+
+        // dispose lodestone client
+        LodestoneClientProvider.Dispose();
     }
 
     private void OnCommand(string command, string args)

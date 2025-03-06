@@ -1,10 +1,13 @@
 using System;
+using System.Linq;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Network.Structures.InfoProxy;
 using Dalamud.Plugin.Services;
+using Lumina.Data.Parsing;
+using NetStone.Search.Character;
 
-namespace SamplePlugin;
+namespace ProggersPlease;
 
 public class PContextMenu : IDisposable
 {
@@ -12,7 +15,7 @@ public class PContextMenu : IDisposable
     private readonly MenuItem _menuItem;
     private readonly IChatGui _chatGui;
 
-    private CharacterData _character;
+    private CharacterData? _character;
 
     public PContextMenu(IContextMenu contextMenu, IChatGui chatGui)
     {
@@ -22,7 +25,7 @@ public class PContextMenu : IDisposable
         _menuItem = new MenuItem
         {
             IsEnabled = true,
-            Name = "Show Prog",
+            Name = "Tomestone",
             PrefixChar = 'P',
             IsReturn = false,
             IsSubmenu = false,
@@ -31,9 +34,31 @@ public class PContextMenu : IDisposable
         };
     }
 
-    private void OnClick(IMenuItemClickedArgs args) { 
-        _chatGui.Print("Hello, stupid world!");
+    private async void OnClick(IMenuItemClickedArgs args) { 
+        if (_character is { } && LodestoneClientProvider.GetClient() is { } client) {
+            // get lodestone character id
+            var charName = _character.Name.ToString();
+            var charWorld = _character.HomeWorld.ValueNullable?.Name.ExtractText() ?? "Unknown";
+
+            // TODO: cache character id results
+            var response = await client.SearchCharacter(new CharacterSearchQuery() {
+                CharacterName = charName,
+                World = charWorld
+            });
+
+            var lodestoneResult = response?.Results.FirstOrDefault();
+            if (lodestoneResult is { }) {
+
+                // format: https://tomestone.gg/character/{id}/{name}
+                var sanitizedName = Utils.SanitizeName(charName);
+                var link = $"https://tomestone.gg/character/{lodestoneResult.Id}/{sanitizedName}";
+                Utils.OpenUrl(link);
+            } else {
+                _chatGui.Print($"Character [{charName} - {charWorld}] not found on Lodestone. Unable to open Tomestone.");
+            }
+        }
     }
+
 
     public void Dispose() => Disable();
 
@@ -41,21 +66,19 @@ public class PContextMenu : IDisposable
     public void Disable() => _contextMenu.OnMenuOpened -= OnContextMenuOpened;
 
     private void OnContextMenuOpened(IMenuOpenedArgs args) { 
-        _chatGui.Print(args.AddonName?.ToString() ?? "no addon name");
-        if (args.AddonName != "PartyMemberList") {
-            return;
-        }
-        _chatGui.Print(args.Target?.ToString() ?? "no target");
+        // theoretically, we dont care about the AddonName, only if the target is a PC
+        // if (args.AddonName != "PartyMemberList") {
+        //     return;
+        // }
         if (args.Target is MenuTargetDefault menuTarget && menuTarget.TargetCharacter is { } character)
         {
-            _chatGui.Print($"Clicked on {character.Name} - {character.HomeWorld.ValueNullable?.Name.ExtractText()}");
-
             _character = character;
 
-            _chatGui.Print($"{character.ContentId}");
-
+            // make sure lodestone client is ready
+            if (LodestoneClientProvider.GetClient() != null) {
+                args.AddMenuItem(_menuItem);
+            }
         }
 
-        args.AddMenuItem(_menuItem);
     }
 }
