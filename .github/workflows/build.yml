@@ -58,7 +58,6 @@ jobs:
         name: ProggersPlease ${{ env.RELEASE_VERSION }}
         tag_name: v${{ env.RELEASE_VERSION }}
         prerelease: false
-        generate_release_notes: true
         fail_on_unmatched_files: true
     - name: Commit repo.json
       if: ${{ env.RELEASE_VERSION != '0.0.0.0' }}
