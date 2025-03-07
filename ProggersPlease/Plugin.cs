@@ -4,6 +4,7 @@ using Dalamud.Plugin;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using ProggersPlease.Windows;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 
 namespace ProggersPlease;
 
@@ -23,6 +24,10 @@ public sealed class Plugin : IDalamudPlugin
     public readonly WindowSystem WindowSystem = new("Proggers, Please!");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
+
+    private PContextMenu PContextMenu { get; init; }
+
+    private DalamudLinkPayload WebLinkPayload { get; init; }
 
     public Plugin()
     {
@@ -55,9 +60,10 @@ public sealed class Plugin : IDalamudPlugin
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
+        WebLinkPayload = PluginInterface.AddChatLinkHandler(333, (x, z) => Utils.OpenUrl(z.ToString()));
         // adds a context menu item to the context menu for players
-        var contextMenu = new PContextMenu(ContextMenu, ChatGui);
-        contextMenu.Enable();
+        PContextMenu = new PContextMenu(ContextMenu, ChatGui, WebLinkPayload);
+        PContextMenu.Enable();
     }
 
 
@@ -69,6 +75,9 @@ public sealed class Plugin : IDalamudPlugin
         MainWindow.Dispose();
 
         // CommandManager.RemoveHandler(CommandName);
+
+        PContextMenu.Dispose();
+        PluginInterface.RemoveChatLinkHandler(333);
 
         // dispose lodestone client
         LodestoneClientProvider.Dispose();

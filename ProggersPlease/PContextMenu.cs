@@ -1,10 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Network.Structures.InfoProxy;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Plugin.Services;
-using Lumina.Data.Parsing;
 using NetStone.Search.Character;
 
 namespace ProggersPlease;
@@ -16,11 +17,13 @@ public class PContextMenu : IDisposable
     private readonly IChatGui _chatGui;
 
     private CharacterData? _character;
+    private readonly DalamudLinkPayload _webLinkPayload;
 
-    public PContextMenu(IContextMenu contextMenu, IChatGui chatGui)
+    public PContextMenu(IContextMenu contextMenu, IChatGui chatGui, DalamudLinkPayload webLinkPayload)
     {
         _contextMenu = contextMenu;
         _chatGui = chatGui;
+        _webLinkPayload = webLinkPayload;
         
         _menuItem = new MenuItem
         {
@@ -53,6 +56,19 @@ public class PContextMenu : IDisposable
                 var sanitizedName = Utils.SanitizeName(charName);
                 var link = $"https://tomestone.gg/character/{lodestoneResult.Id}/{sanitizedName}";
                 Utils.OpenUrl(link);
+
+                // add link to chat
+                var payloads = new List<Payload>
+                {
+                    new UIForegroundPayload(579),
+                    new TextPayload($"{charName}'s Tomestone: \n    "),
+                    _webLinkPayload,
+                    new TextPayload(link),
+                    RawPayload.LinkTerminator,
+                    UIForegroundPayload.UIForegroundOff
+                };
+                var sestringurl = new SeString(payloads);
+                _chatGui.Print(sestringurl);
             } else {
                 _chatGui.Print($"Character [{charName} - {charWorld}] not found on Lodestone. Unable to open Tomestone.");
             }
