@@ -1,7 +1,9 @@
+[
 {
-    "AssemblyVersion": "0.0.0.0",
-    "TestingAssemblyVersion": "0.0.0.0",
-    "DownloadLinkInstall": "",
-    "DownloadLinkTesting": "",
-    "DownloadLinkUpdate": ""
+  "AssemblyVersion": "0.0.0.1",
+  "TestingAssemblyVersion": "0.0.0.1",
+  "DownloadLinkInstall": "https://github.com/nomnivore/ProggersPlease/releases/download/v0.0.0.1/ProggersPlease.zip",
+  "DownloadLinkTesting": "https://github.com/nomnivore/ProggersPlease/releases/download/v0.0.0.1/ProggersPlease.zip",
+  "DownloadLinkUpdate": "https://github.com/nomnivore/ProggersPlease/releases/download/v0.0.0.1/ProggersPlease.zip"
 }
+]
