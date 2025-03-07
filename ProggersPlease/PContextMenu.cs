@@ -46,7 +46,7 @@ public class PContextMenu : IDisposable
                 World = charWorld
             });
 
-            var lodestoneResult = response?.Results.FirstOrDefault();
+            var lodestoneResult = response?.Results.Where(c => c.Name == charName).FirstOrDefault();
             if (lodestoneResult is { }) {
 
                 // format: https://tomestone.gg/character/{id}/{name}
