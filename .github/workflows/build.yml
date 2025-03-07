@@ -58,8 +58,6 @@ jobs:
         name: ProggersPlease ${{ env.RELEASE_VERSION }}
         tag_name: v${{ env.RELEASE_VERSION }}
         prerelease: false
-        append_body: true
-        body_path: .github/release-notices.md
         generate_release_notes: true
         fail_on_unmatched_files: true
     - name: Commit repo.json
