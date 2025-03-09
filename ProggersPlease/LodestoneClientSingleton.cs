@@ -4,7 +4,7 @@ using NetStone;
 
 namespace ProggersPlease
 {
-    class LodestoneClientProvider
+    class LodestoneClientSingleton
     {
         private static LodestoneClient? _instance;
         private static readonly Object _lock = new object();

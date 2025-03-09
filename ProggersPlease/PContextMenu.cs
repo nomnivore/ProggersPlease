@@ -18,12 +18,14 @@ public class PContextMenu : IDisposable
 
     private CharacterData? _character;
     private readonly DalamudLinkPayload _webLinkPayload;
+    private readonly LodestoneStore _lodestoneStore;
 
-    public PContextMenu(IContextMenu contextMenu, IChatGui chatGui, DalamudLinkPayload webLinkPayload)
+    public PContextMenu(IContextMenu contextMenu, IChatGui chatGui, DalamudLinkPayload webLinkPayload, LodestoneStore lodestoneStore)
     {
         _contextMenu = contextMenu;
         _chatGui = chatGui;
         _webLinkPayload = webLinkPayload;
+        _lodestoneStore = lodestoneStore;
         
         _menuItem = new MenuItem
         {
@@ -38,23 +40,17 @@ public class PContextMenu : IDisposable
     }
 
     private async void OnClick(IMenuItemClickedArgs args) { 
-        if (_character is { } && LodestoneClientProvider.GetClient() is { } client) {
+        if (_character is { } && LodestoneClientSingleton.GetClient() is { } client) {
             // get lodestone character id
             var charName = _character.Name.ToString();
             var charWorld = _character.HomeWorld.ValueNullable?.Name.ExtractText() ?? "Unknown";
 
-            // TODO: cache character id results
-            var response = await client.SearchCharacter(new CharacterSearchQuery() {
-                CharacterName = charName,
-                World = charWorld
-            });
-
-            var lodestoneResult = response?.Results.Where(c => c.Name == charName).FirstOrDefault();
-            if (lodestoneResult is { }) {
+            var lodestoneId = await _lodestoneStore.GetLodestoneId(charName, charWorld);
+            if (lodestoneId != null) {
 
                 // format: https://tomestone.gg/character/{id}/{name}
                 var sanitizedName = Utils.SanitizeName(charName);
-                var link = $"https://tomestone.gg/character/{lodestoneResult.Id}/{sanitizedName}";
+                var link = $"https://tomestone.gg/character/{lodestoneId}/{sanitizedName}";
                 Utils.OpenUrl(link);
 
                 // add link to chat
@@ -91,7 +87,7 @@ public class PContextMenu : IDisposable
             _character = character;
 
             // make sure lodestone client is ready
-            if (LodestoneClientProvider.GetClient() != null) {
+            if (LodestoneClientSingleton.GetClient() != null) {
                 args.AddMenuItem(_menuItem);
             }
         }

@@ -26,6 +26,7 @@ public sealed class Plugin : IDalamudPlugin
     private MainWindow MainWindow { get; init; }
 
     private PContextMenu PContextMenu { get; init; }
+    private LodestoneStore _lodestoneStore { get; init; }
 
     private DalamudLinkPayload WebLinkPayload { get; init; }
 
@@ -34,7 +35,8 @@ public sealed class Plugin : IDalamudPlugin
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         // initialize lodestone client
-        LodestoneClientProvider.Initialize();
+        LodestoneClientSingleton.Initialize();
+        _lodestoneStore = new LodestoneStore();
 
         ConfigWindow = new ConfigWindow(this);
         MainWindow = new MainWindow(this);
@@ -62,7 +64,7 @@ public sealed class Plugin : IDalamudPlugin
 
         WebLinkPayload = PluginInterface.AddChatLinkHandler(333, (x, z) => Utils.OpenUrl(z.ToString()));
         // adds a context menu item to the context menu for players
-        PContextMenu = new PContextMenu(ContextMenu, ChatGui, WebLinkPayload);
+        PContextMenu = new PContextMenu(ContextMenu, ChatGui, WebLinkPayload, _lodestoneStore);
         PContextMenu.Enable();
     }
 
@@ -80,7 +82,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.RemoveChatLinkHandler(333);
 
         // dispose lodestone client
-        LodestoneClientProvider.Dispose();
+        LodestoneClientSingleton.Dispose();
     }
 
     private void OnCommand(string command, string args)
