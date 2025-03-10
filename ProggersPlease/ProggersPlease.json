@@ -3,6 +3,7 @@
   "Name": "Proggers, Please",
   "Punchline": "Great for checking passports!",
   "Description": "Adds a context menu option to the Party Member list to view a player's Tomestone in your browser.",
+  "IconUrl": "https://raw.githubusercontent.com/nomnivore/ProggersPlease/main/images/icon.png",
   "AssemblyVersion": "0.0.0.2",
   "TestingAssemblyVersion": "0.0.0.2",
   "ApplicableVersion": "any",
