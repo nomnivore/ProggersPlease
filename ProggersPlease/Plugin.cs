@@ -62,7 +62,7 @@ public sealed class Plugin : IDalamudPlugin
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
-        WebLinkPayload = PluginInterface.AddChatLinkHandler(333, (x, z) => Utils.OpenUrl(z.ToString()));
+        WebLinkPayload = ChatGui.AddChatLinkHandler(333, (x, z) => Utils.OpenUrl(z.ToString()));
         // adds a context menu item to the context menu for players
         PContextMenu = new PContextMenu(ContextMenu, ChatGui, WebLinkPayload, _lodestoneStore);
         PContextMenu.Enable();
@@ -79,7 +79,7 @@ public sealed class Plugin : IDalamudPlugin
         // CommandManager.RemoveHandler(CommandName);
 
         PContextMenu.Dispose();
-        PluginInterface.RemoveChatLinkHandler(333);
+        ChatGui.RemoveChatLinkHandler(333);
 
         // dispose lodestone client
         LodestoneClientSingleton.Dispose();

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.NET.Sdk/12.0.2">
+<Project Sdk="Dalamud.NET.Sdk/13.0.0">
 
   <PropertyGroup>
-    <Version>0.0.0.5</Version>
+    <Version>0.0.0.6</Version>
     <Description>Passport plugin</Description>
     <PackageProjectUrl>https://github.com/goatcorp/SamplePlugin</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
@@ -11,6 +11,6 @@
 
   <ItemGroup>
     <PackageReference Include="NetStone" Version="1.4.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.3" />
   </ItemGroup>
 </Project>
