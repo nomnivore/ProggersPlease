@@ -5,6 +5,9 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using ProggersPlease.Windows;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Game.Text.SeStringHandling;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ProggersPlease;
 
@@ -16,6 +19,7 @@ public sealed class Plugin : IDalamudPlugin
 
     [PluginService] internal static IContextMenu ContextMenu { get; private set; } = null!;
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
+    [PluginService] internal static IPartyList PartyList { get; private set; } = null!;
 
     private const string CommandName = "/proggers";
 
@@ -39,17 +43,17 @@ public sealed class Plugin : IDalamudPlugin
         _lodestoneStore = new LodestoneStore();
 
         ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this);
+        MainWindow = new MainWindow(this, PartyList, _lodestoneStore);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
         // TODO: add commands (if needed)
 
-        // CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
-        // {
-        //     HelpMessage = "A useful message to display in /xlhelp"
-        // });
+        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
+        {
+            HelpMessage = "A useful message to display in /xlhelp"
+        });
 
         PluginInterface.UiBuilder.Draw += DrawUI;
 
@@ -64,10 +68,56 @@ public sealed class Plugin : IDalamudPlugin
 
         WebLinkPayload = ChatGui.AddChatLinkHandler(333, (x, z) => Utils.OpenUrl(z.ToString()));
         // adds a context menu item to the context menu for players
-        PContextMenu = new PContextMenu(ContextMenu, ChatGui, WebLinkPayload, _lodestoneStore);
+        PContextMenu = new PContextMenu(this, ContextMenu);
         PContextMenu.Enable();
     }
 
+    public async Task<string?> GetTomestoneLink(string name, string world)
+    {
+        var lodestoneId = await _lodestoneStore.GetLodestoneId(name, world);
+        if (lodestoneId is { })
+        {
+            // format: https://tomestone.gg/character/{id}/{name}
+            var sanitizedName = Utils.SanitizeName(name);
+            return $"https://tomestone.gg/character/{lodestoneId}/{sanitizedName}";
+        }
+        return null;
+    }
+
+    public async Task<string?> GetTomestoneLink(string key)
+    {
+        var (name, world) = Utils.FromKey(key);
+        return await GetTomestoneLink(name, world);
+    }
+
+    public async Task OpenTomestone(string name, string world)
+    {
+        var url = await GetTomestoneLink(name, world);
+        if (url is { })
+        {
+            Utils.OpenUrl(url);
+            // add link to chat
+            var payloads = new List<Payload>
+            {
+                new UIForegroundPayload(579),
+                new TextPayload($"{name}'s Tomestone: \n    "),
+                WebLinkPayload,
+                new TextPayload(url),
+                RawPayload.LinkTerminator,
+                UIForegroundPayload.UIForegroundOff
+            };
+            var sestringurl = new SeString(payloads);
+            ChatGui.Print(sestringurl);
+        } else {
+            ChatGui.Print($"Character [{name} - {world}] not found on Lodestone. Unable to open Tomestone.");
+        }
+    }
+
+    public async Task OpenTomestone(string key)
+    {
+        var (name, world) = Utils.FromKey(key);
+        await OpenTomestone(name, world);
+    }
 
     public void Dispose()
     {
@@ -76,7 +126,7 @@ public sealed class Plugin : IDalamudPlugin
         ConfigWindow.Dispose();
         MainWindow.Dispose();
 
-        // CommandManager.RemoveHandler(CommandName);
+        CommandManager.RemoveHandler(CommandName);
 
         PContextMenu.Dispose();
         ChatGui.RemoveChatLinkHandler(333);

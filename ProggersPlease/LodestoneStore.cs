@@ -31,7 +31,7 @@ public class LodestoneStore : IDisposable
             var lodestoneResult = response?.Results.Where(c => c.Name == name).FirstOrDefault();
             if (lodestoneResult is { }) {
                 // add to cache
-                _cache.Set($"{name}_{world}", lodestoneResult.Id, new MemoryCacheEntryOptions
+                _cache.Set(Utils.ToKey(name, world), lodestoneResult.Id, new MemoryCacheEntryOptions
                 {
                     SlidingExpiration = TimeSpan.FromHours(2),
                     Size = 1,
@@ -43,10 +43,19 @@ public class LodestoneStore : IDisposable
         return null;
     }
 
+    public async Task<string?> GetLodestoneId(string key)
+    {
+        // split key into name and world
+        var (name, world) = Utils.FromKey(key);
+
+        return await GetLodestoneId(name, world);
+    }
+
     public string? GetCachedId(string name, string world) {
-        return GetCachedId($"{name}_{world}");
+        return GetCachedId(Utils.ToKey(name, world));
 
     }
+
     public string? GetCachedId(string key) {
 
         if (_cache.TryGetValue(key, out var cachedId))
@@ -54,6 +63,18 @@ public class LodestoneStore : IDisposable
             return cachedId as string;
         }
         return null;
+    }
+
+    public void RemoveCachedId(string name, string world) {
+        RemoveCachedId(Utils.ToKey(name, world));
+    }
+
+    public void RemoveCachedId(string? key) {
+        if (key is null) {
+            return;
+        }
+
+        _cache.Remove(key);
     }
 
     public void EmptyCache()
@@ -66,6 +87,10 @@ public class LodestoneStore : IDisposable
         var keys = _cache.Keys.AsEnumerable();
 
         return keys;
+    }
+
+    public int GetCacheSize() {
+        return _cache.Count;
     }
 
     public void Dispose() {

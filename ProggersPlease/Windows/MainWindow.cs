@@ -1,8 +1,7 @@
 using System;
 using System.Numerics;
+using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Internal;
-using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 
@@ -12,10 +11,10 @@ public class MainWindow : Window, IDisposable
 {
     private Plugin Plugin;
 
-    // We give this window a hidden ID using ##
-    // So that the user will see "My Amazing Window" as window title,
-    // but for ImGui the ID is "My Amazing Window##With a hidden ID"
-    public MainWindow(Plugin plugin)
+    private readonly IPartyList _partyList;
+    private readonly LodestoneStore _lodestoneStore;
+
+    public MainWindow(Plugin plugin, IPartyList partyList, LodestoneStore lodestoneStore)
 
         : base("Proggers, Please##ProggersMainWindow", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
 
@@ -26,22 +25,121 @@ public class MainWindow : Window, IDisposable
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
         Plugin = plugin;
+        _partyList = partyList;
+        _lodestoneStore = lodestoneStore;
     }
 
     public void Dispose() { }
 
-    public override void Draw()
+    private void DrawPartyTab() {
+
+            // get the current list of party members
+            var partyMembers = _partyList;
+
+            ImGui.BeginTable("##party-list", 3, ImGuiTableFlags.Borders);
+            ImGui.TableSetupColumn("Party Member");
+            ImGui.TableSetupColumn("World");
+            ImGui.TableSetupColumn("Tomestone");
+            ImGui.TableHeadersRow();
+            foreach (var member in partyMembers)
+            {
+                var memberRef = _partyList.CreatePartyMemberReference(member.Address);
+
+                var name = member.Name.TextValue;
+                var world = memberRef?.World.ValueNullable?.Name.ExtractText() ?? "Unknown";
+
+                ImGui.TableNextColumn();
+                ImGui.Text(name);
+                ImGui.TableNextColumn();
+                ImGui.Text(world);
+                ImGui.TableNextColumn();
+
+                // TODO: logic to check if its cached already
+                var buttonText = "View";
+                if (_lodestoneStore.GetCachedId(name, world) is { }) {
+                    buttonText = "View (Cached)";
+                }
+
+                if (ImGui.Button($"{buttonText}##view-{member.Address}"))
+                {
+                    Task.Run(async () => await Plugin.OpenTomestone(name, world));
+                }
+            }
+
+            ImGui.EndTable();
+
+            ImGui.Spacing();
+            
+            if (ImGui.Button("Fetch All##fetch-all")) {
+                Task.Run(async () => {
+                    foreach (var member in partyMembers) {
+                        var memberRef = _partyList.CreatePartyMemberReference(member.Address);
+
+                        var name = member.Name.TextValue;
+                        var world = memberRef?.World.ValueNullable?.Name.ExtractText() ?? "Unknown";
+                        await _lodestoneStore.GetLodestoneId(name, world);
+                    }
+                });
+            }
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Fetches all party members' lodestone IDs and caches them");
+            }
+    }
+
+    private void DrawRecentTab()
     {
+        ImGui.Text("Left Click to open Tomestone\nRight Click to remove from cache");
 
-        ImGui.Text("Nothing here yet.");
+        ImGui.Spacing();
 
+        var tableHeight = ImGui.GetContentRegionAvail().Y - ImGui.GetFrameHeightWithSpacing();
 
-
-        if (ImGui.Button("Show Settings"))
+        ImGui.BeginTable("##recent-list", 1, ImGuiTableFlags.Borders | ImGuiTableFlags.ScrollY, new Vector2(0, tableHeight));
+        foreach (var key in _lodestoneStore.GetCacheKeys())
         {
-            Plugin.ToggleConfigUI();
+            var (name, world) = Utils.FromKey(key.ToString() ?? "error_unknown");
+            ImGui.TableNextColumn();
+            if (ImGui.Selectable($"{name} ({world})")) {
+                Task.Run(async () => await Plugin.OpenTomestone(name, world));
+            }
+            // if right clicked, delete
+            if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Right)) {
+                _lodestoneStore.RemoveCachedId(key.ToString());
+            }
+        }
+
+        // entries for testing size only
+        // for (var i = 0; i < 100; i++) {
+        //     ImGui.TableNextColumn();
+        //     ImGui.Text("Test " + i);
+        // }
+        ImGui.EndTable();
+
+        ImGui.Spacing();
+
+        if (ImGui.Button("Clear Cache##clear-cache")) {
+            _lodestoneStore.EmptyCache();
         }
 
         ImGui.Spacing();
+    }
+
+    public override void Draw()
+    {
+
+        ImGui.BeginTabBar("##main-tabs");
+        if (ImGui.BeginTabItem("Current Party##current-party"))
+        {
+            DrawPartyTab();
+
+            ImGui.EndTabItem();
+        }
+
+        if (ImGui.BeginTabItem("Recently Viewed##recent"))
+        {
+            DrawRecentTab();
+            ImGui.EndTabItem();
+        }
+        ImGui.EndTabBar();
     }
 }
