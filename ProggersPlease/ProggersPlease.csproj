@@ -2,7 +2,7 @@
 <Project Sdk="Dalamud.NET.Sdk/13.0.0">
 
   <PropertyGroup>
-    <Version>0.0.0.6</Version>
+    <Version>0.0.0.7</Version>
     <Description>Passport plugin</Description>
     <PackageProjectUrl>https://github.com/goatcorp/SamplePlugin</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
