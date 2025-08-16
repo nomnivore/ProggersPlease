@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
@@ -15,9 +16,9 @@ public class LodestoneStore : IDisposable
     }
 
     public async Task<string?> GetLodestoneId(string name, string world) {
-        // check cache first
-        if (_cache.TryGetValue($"{name}_{world}", out var cachedId)) {
-            return cachedId as string;
+        // check cache first using GetCachedId
+        if (GetCachedId(name, world) is { } cachedId) {
+            return cachedId;
         }
 
         // if not cached, fetch from lodestone
@@ -40,6 +41,31 @@ public class LodestoneStore : IDisposable
         }
 
         return null;
+    }
+
+    public string? GetCachedId(string name, string world) {
+        return GetCachedId($"{name}_{world}");
+
+    }
+    public string? GetCachedId(string key) {
+
+        if (_cache.TryGetValue(key, out var cachedId))
+        {
+            return cachedId as string;
+        }
+        return null;
+    }
+
+    public void EmptyCache()
+    {
+        _cache.Clear();
+    }
+
+    public IEnumerable GetCacheKeys()
+    {
+        var keys = _cache.Keys.AsEnumerable();
+
+        return keys;
     }
 
     public void Dispose() {
